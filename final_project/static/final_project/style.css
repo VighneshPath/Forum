@@ -1,0 +1,12 @@
+img {
+    display: inline-block;
+    max-width: 100%;
+    height: auto;
+}
+.dark-mode{
+    color: white;
+    background-color: #202020;
+}
+.CodeMirror{
+    min-height: 50px;
+}

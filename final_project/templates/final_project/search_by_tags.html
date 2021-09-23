@@ -1,0 +1,131 @@
+{% extends "final_project/layout.html" %}
+{% load tz %}
+{% block head %}
+{% endblock %}
+
+{% block body %}
+
+    <div class="container">
+        <form style="margin: 10px;" action="{% url 'search_by_tags' %}" method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="search">Search by Tag: </label>
+                <input class="form-control form-control-lg" name="tags" type="text" id = "search" placeholder="Enter Tags separated by commas">
+            </div>
+            <button type="submit" class="btn dark-mode">Search</button>
+        </form>
+    </div>
+
+    <div class="container">
+        {% if final_tags %}
+            <h4>Posts matching tags: </h4>
+        {% endif %}
+        {% for tag in final_tags %}
+            <small style="margin:5px;border-width: thin; padding: 5px">{{ tag }}</small>
+        {% endfor %}
+    </div>
+
+    <div class="container">
+        {% if final_tag %}
+            <h4>Posts matching tags: </h4>
+        {% endif %}
+        <small style="margin:5px;border-width: thin; padding: 5px">{{ final_tag }}</small>
+    </div>
+    {% for post in posts %}
+        <div class="container" style="">
+            <div class="card" style="margin-top: 20px;margin-bottom: 20px;color: white; background-color: #202020;" id = "{{ post.id }}">
+                <div class="card-header" style="color: white; background-color: #202020;">
+                    <h1 style="display: inline;">{{ post.title }}</h1>
+                    <small style="display: inline; float: right;">Posted by <a href="#" style="display: inline; color: white;">{{ post.user.username }} </a></small>
+                    <br>
+                    <div style="margin-top: 10px;">
+                    {% for tag in tags %}
+                        {% if tag.post == post %}
+                            <a href="{% url 'search_tag' tag.content %}" style="text-decoration: none; color: white;"><small style="margin:5px;border-width: thin; padding: 5px">{{ tag.content }}</small></a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if post.user == user %}
+                        <button class="edit_post" style="display: inline; float: right;border: none;background-color:#202020;color:white;"><i class="fa fa-edit" style="background-color:#202020;color:white;"></i></button>
+                    {% endif %}
+                    </div>
+                </div>
+                <div class="card-body container" style="background-color: #202020; color: white;">
+                    {{ post.content | safe}}
+                </div>
+                <div class="card-footer" style="background-color: #202020; color: white;">
+                    {% if post.user.username != user.username %}
+                        <div style="display: inline;" class="likes" id="p{{ post.id }}">
+
+                        </div>
+                        <script type="text/babel">
+                            class App extends React.Component {
+                                constructor(props){
+                                    super(props);
+                                    {% if post.id in liked_posts %}
+                                        this.state = {
+                                            likes: {{ post.likes }},
+                                            emoji: "\u2665"
+                                        };
+                                    {% else %}
+                                        this.state = {
+                                            likes: {{ post.likes }},
+                                            emoji: "\u2661"
+                                        };
+                                    {% endif %}
+                                }
+                                render() {
+                                    return (
+
+                                        <div style={% verbatim %}{{display: "inline"}}{% endverbatim %}>
+                                            {% if user.is_authenticated %}
+                                                <button style={% verbatim %}{{border: "none", backgroundColor: "#202020", color: "white"}}{% endverbatim %} onClick={this.likes} >{this.state.emoji}</button>
+                                            {% else %}
+                                                <button style={% verbatim %}{{border: "none", backgroundColor: "#202020", color: "white"}}{% endverbatim %}>{this.state.emoji}</button>
+                                            {% endif %}
+                                            {this.state.likes}
+                                        </div>
+
+                                    );
+                                }
+                                likes = ()=>{
+                                    if(this.state.emoji === "♥"){
+                                        fetch("/liked_post/{{ post.id }}");
+                                        this.setState(state=>({
+                                            likes: state.likes - 1,
+                                            emoji: "\u2661"
+                                        }));
+                                    }
+                                    else{
+                                        fetch("/liked_post/{{ post.id }}");
+                                        this.setState(state=>({
+                                            likes: state.likes + 1,
+                                            emoji: "\u2665"
+                                        }));
+                                    }
+
+                                }
+                            }
+                            ReactDOM.render(<App />, document.querySelector("#p{{ post.id }}"));
+                        </script>
+                    {% else %}
+                        <div style="display: inline;">
+                            <button style="border: none; background-color: #202020; color: white;">&#9825;</button>
+                            {{ post.likes }}
+
+                        </div>
+                    {% endif %}
+                    <div style="display: inline;">
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'post' post.id %}" style="padding-left: 40%;"><button type="button" style="border: none;" class="btn btn-outline-light"><i class='far fa-comment-alt' style='font-size:16px; padding-right: 5px;'></i>{{ post.comments}} Comments</button></a>
+                        {% else %}
+                            <span style="padding-left: 40%;"><button type="button" style="border: none;" class="btn btn-outline-light"><i class='far fa-comment-alt' style='font-size:16px; padding-right: 5px;'></i>{{ post.comments}} Comments</button></span>
+                        {% endif %}
+                        <span style="float: right;">{{ post.time_stamp | localtime }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+
+{% endblock %}
